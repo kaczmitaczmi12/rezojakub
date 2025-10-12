@@ -52,22 +52,36 @@ bool EventsScheduler::loadScheduleEventFromXml() const
 		int16_t day;
 		int16_t month;
 
-		if (!(attr = schedNode.attribute("enddate"))) {
+        if (!(attr = schedNode.attribute("enddate"))) {
 			continue;
 		} else {
 			ss_d = attr.as_string();
-			sscanf(ss_d.c_str(), "%hd/%hd/%hd", &month, &day, &year);
+            if (sscanf(ss_d.c_str(), "%hd/%hd/%hd", &month, &day, &year) != 3) {
+                SPDLOG_WARN("Invalid enddate format for scheduled event '{}': {}", ss_d, ss.str());
+                continue;
+            }
+            if (month < 1 || month > 12 || day < 1 || day > 31) {
+                SPDLOG_WARN("Out-of-range enddate for scheduled event '{}': {}", ss_d, ss.str());
+                continue;
+            }
 			daysNow = ((year * 365) + (month * 30) + day);
 			if (daysMath > daysNow) {
 				continue;
 			}
 		}
 
-		if (!(attr = schedNode.attribute("startdate"))) {
+        if (!(attr = schedNode.attribute("startdate"))) {
 			continue;
 		} else {
 			ss_d = attr.as_string();
-			sscanf(ss_d.c_str(), "%hd/%hd/%hd", &month, &day, &year);
+            if (sscanf(ss_d.c_str(), "%hd/%hd/%hd", &month, &day, &year) != 3) {
+                SPDLOG_WARN("Invalid startdate format for scheduled event '{}': {}", ss_d, ss.str());
+                continue;
+            }
+            if (month < 1 || month > 12 || day < 1 || day > 31) {
+                SPDLOG_WARN("Out-of-range startdate for scheduled event '{}': {}", ss_d, ss.str());
+                continue;
+            }
 			daysNow = ((year * 365) + (month * 30) + day);
 			if (daysMath < daysNow) {
 				continue;

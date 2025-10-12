@@ -153,17 +153,22 @@ void Connection::parseProxyIdentification(const boost::system::error_code& error
 		return;
 	}
 
-	uint8_t* msgBuffer = msg.getBuffer();
+    uint8_t* msgBuffer = msg.getBuffer();
 	auto charData = static_cast<char*>(static_cast<void*>(msgBuffer));
-	std::string serverName = g_configManager().getString(SERVER_NAME) + "\n";
+    std::string serverName = g_configManager().getString(SERVER_NAME) + "\n";
+    if (serverName.size() < 2) {
+        SPDLOG_ERROR("[Connection::parseProxyIdentification] - Invalid server name length for proxy identification");
+        close(FORCE_CLOSE);
+        return;
+    }
 	if (connectionState == CONNECTION_STATE_IDENTIFYING) {
 		if (msgBuffer[1] == 0x00 || strncasecmp(charData, &serverName[0], 2) != 0) {
 			//Probably not proxy identification so let's try standard parsing method
 			connectionState = CONNECTION_STATE_OPEN;
 			parseHeader(error);
 			return;
-		} else {
-			size_t remainder = serverName.length()-2;
+        } else {
+            size_t remainder = serverName.length()-2;
 			if (remainder > 0) {
 				connectionState = CONNECTION_STATE_READINGS;
 				try {
@@ -185,7 +190,7 @@ void Connection::parseProxyIdentification(const boost::system::error_code& error
 			}
 		}
 	} else if (connectionState == CONNECTION_STATE_READINGS) {
-		size_t remainder = serverName.length() - 2;
+        size_t remainder = serverName.length() - 2;
 		if (strncasecmp(charData, &serverName[2], remainder) == 0) {
 			connectionState = CONNECTION_STATE_OPEN;
 		} else {

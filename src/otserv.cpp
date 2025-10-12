@@ -228,7 +228,7 @@ void mainLoader(int, char*[], ServiceManager* services) {
 	// dispatcher thread
 	g_game().setGameState(GAME_STATE_STARTUP);
 
-	srand(static_cast<unsigned int>(OTSYS_TIME()));
+    // Do not seed legacy rand(); prefer std::random_device / mt19937 utilities when randomness is needed.
 #ifdef _WIN32
 	SetConsoleTitle(STATUS_SERVER_NAME);
 #endif

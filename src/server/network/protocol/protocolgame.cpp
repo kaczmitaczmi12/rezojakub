@@ -573,9 +573,8 @@ void ProtocolGame::onRecvFirstMessage(NetworkMessage &msg)
 void ProtocolGame::onConnect()
 {
 	auto output = OutputMessagePool::getOutputMessage();
-	static std::random_device rd;
-	static std::ranlux24 generator(rd());
-	static std::uniform_int_distribution<uint16_t> randNumber(0x00, 0xFF);
+    // Use OS entropy per-connection; keep it simple and unpredictable
+    std::random_device rd;
 
 	// Skip checksum
 	output->skipBytes(sizeof(uint32_t));
@@ -585,11 +584,13 @@ void ProtocolGame::onConnect()
 	output->addByte(0x1F);
 
 	// Add timestamp & random number
-	challengeTimestamp = static_cast<uint32_t>(time(nullptr));
-	output->add<uint32_t>(challengeTimestamp);
+    challengeTimestamp = static_cast<uint32_t>(time(nullptr));
+    output->add<uint32_t>(challengeTimestamp);
 
-	challengeRandom = randNumber(generator);
-	output->addByte(challengeRandom);
+    // Strengthen randomness: 2 bytes from OS entropy
+    uint16_t random16 = (static_cast<uint16_t>(rd()) ^ static_cast<uint16_t>(rd())) & 0xFFFF;
+    challengeRandom = static_cast<uint8_t>(random16 & 0xFF);
+    output->addByte(challengeRandom);
 
 	// Go back and write checksum
 	output->skipBytes(-12);
