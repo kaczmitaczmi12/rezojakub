@@ -117,7 +117,11 @@ endif()
 find_package(spdlog REQUIRED)
 find_package(LuaJIT REQUIRED)
 find_package(Threads REQUIRED)
-find_package(Protobuf REQUIRED)
+# Prefer CONFIG mode (vcpkg), fallback to module
+find_package(Protobuf CONFIG)
+if (NOT Protobuf_FOUND)
+  find_package(Protobuf REQUIRED)
+endif()
 find_package(GMP REQUIRED)
 
 if (MSVC)
@@ -353,7 +357,7 @@ else()
       Boost::system
       CURL::libcurl
       jsoncpp_static
-      unofficial::libmariadb unofficial::mariadbclient
+      unofficial::libmariadb
       pugixml::pugixml
       spdlog::spdlog
       Threads::Threads
