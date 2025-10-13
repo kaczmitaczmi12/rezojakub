@@ -74,9 +74,17 @@ class NetworkMessage
 		Position getPosition();
 
 		// skips count unknown/unused bytes in an incoming message
-		void skipBytes(int16_t count) {
-			info.position += count;
-		}
+        void skipBytes(int16_t count) {
+            // defensive bounds check to avoid under/overflowing the buffer window
+            const int32_t newPosition = static_cast<int32_t>(info.position) + static_cast<int32_t>(count);
+            const int32_t minPosition = 0; // allow header rewinds if needed (callers ensure correctness)
+            const int32_t maxPosition = static_cast<int32_t>(info.length) + static_cast<int32_t>(INITIAL_BUFFER_POSITION);
+            if (newPosition < minPosition || newPosition > maxPosition) {
+                info.overrun = true;
+                return;
+            }
+            info.position = static_cast<MsgSize_t>(newPosition);
+        }
 
 		// simply write functions for outgoing message
 		void addByte(uint8_t value) {

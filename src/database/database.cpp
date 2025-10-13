@@ -218,12 +218,12 @@ std::string Database::escapeBlob(const char* s, uint32_t length) const
 	escaped.reserve(maxLength + 2);
 	escaped.push_back('\'');
 
-	if (length != 0) {
-		char* output = new char[maxLength];
-		mysql_real_escape_string(handle, output, s, length);
-		escaped.append(output);
-		delete[] output;
-	}
+    if (length != 0) {
+        std::string out(maxLength, '\0');
+        unsigned long written = mysql_real_escape_string(handle, out.data(), s, length);
+        out.resize(written);
+        escaped.append(out);
+    }
 
 	escaped.push_back('\'');
 	return escaped;

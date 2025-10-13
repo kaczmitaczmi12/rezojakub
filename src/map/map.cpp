@@ -57,17 +57,33 @@ bool Map::loadMap(const std::string& identifier,
 			SPDLOG_WARN("Map download URL in config.lua is empty, download disabled");
 		}
 
-		if (CURL *curl = curl_easy_init(); curl && !mapDownloadUrl.empty()) {
-			SPDLOG_INFO("Downloading " + g_configManager().getString(MAP_NAME) + ".otbm to world folder");
-			FILE *otbm = fopen(identifier.c_str(), "wb");
-			curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-			curl_easy_setopt(curl, CURLOPT_URL, mapDownloadUrl.c_str());
-			curl_easy_setopt(curl, CURLOPT_WRITEDATA, otbm);
-			curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
-			curl_easy_perform(curl);
-			curl_easy_cleanup(curl);
-			fclose(otbm);
-		}
+    if (CURL *curl = curl_easy_init(); curl && !mapDownloadUrl.empty()) {
+        SPDLOG_INFO("Downloading " + g_configManager().getString(MAP_NAME) + ".otbm to world folder");
+        FILE *otbm = fopen(identifier.c_str(), "wb");
+        if (!otbm) {
+            SPDLOG_ERROR("Failed to open map file for writing: {}", identifier);
+            curl_easy_cleanup(curl);
+            return false;
+        }
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+        curl_easy_setopt(curl, CURLOPT_URL, mapDownloadUrl.c_str());
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, otbm);
+        curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
+        curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1L);
+        CURLcode rc = curl_easy_perform(curl);
+        curl_easy_cleanup(curl);
+        if (rc != CURLE_OK) {
+            SPDLOG_ERROR("Map download failed: {}", curl_easy_strerror(rc));
+            fclose(otbm);
+            // attempt to remove partial file
+            std::remove(identifier.c_str());
+            return false;
+        }
+        if (fclose(otbm) != 0) {
+            SPDLOG_ERROR("Failed to close map file: {}", identifier);
+            return false;
+        }
+    }
 	}
 
 	// Load the map

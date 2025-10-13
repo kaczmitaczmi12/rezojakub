@@ -68,7 +68,10 @@ class OutputMessage : public NetworkMessage
 	private:
 		template <typename T>
 		void add_header(T addHeader) {
-			assert(outputBufferStart >= sizeof(T));
+			if (outputBufferStart < sizeof(T)) {
+				SPDLOG_ERROR("[OutputMessage::add_header] - Not enough space to prepend header of size {}", sizeof(T));
+				return;
+			}
 			outputBufferStart -= sizeof(T);
 			memcpy(buffer + outputBufferStart, &addHeader, sizeof(T));
 			//added header size to the message size

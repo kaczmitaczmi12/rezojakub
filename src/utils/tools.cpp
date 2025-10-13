@@ -354,29 +354,35 @@ void trimString(std::string& str)
 
 std::string convertIPToString(uint32_t ip)
 {
-	char buffer[17];
+    char buffer[17];
 
-	int res = sprintf(buffer, "%u.%u.%u.%u", ip & 0xFF, (ip >> 8) & 0xFF, (ip >> 16) & 0xFF, (ip >> 24));
-	if (res < 0) {
-		return {};
-	}
+    int res = snprintf(buffer, sizeof(buffer), "%u.%u.%u.%u",
+                       ip & 0xFF,
+                       (ip >> 8) & 0xFF,
+                       (ip >> 16) & 0xFF,
+                       (ip >> 24));
+    if (res < 0 || static_cast<size_t>(res) >= sizeof(buffer)) {
+        return {};
+    }
 
-	return buffer;
+    return std::string(buffer);
 }
 
 std::string formatDate(time_t time)
 {
-	const tm* tms = localtime(&time);
-	if (!tms) {
-		return {};
-	}
+    const tm* tms = localtime(&time);
+    if (!tms) {
+        return {};
+    }
 
-	char buffer[20];
-	int res = sprintf(buffer, "%02d/%02d/%04d %02d:%02d:%02d", tms->tm_mday, tms->tm_mon + 1, tms->tm_year + 1900, tms->tm_hour, tms->tm_min, tms->tm_sec);
-	if (res < 0) {
-		return {};
-	}
-	return {buffer, 19};
+    char buffer[20];
+    int res = snprintf(buffer, sizeof(buffer), "%02d/%02d/%04d %02d:%02d:%02d",
+                       tms->tm_mday, tms->tm_mon + 1, tms->tm_year + 1900,
+                       tms->tm_hour, tms->tm_min, tms->tm_sec);
+    if (res < 0 || static_cast<size_t>(res) >= sizeof(buffer)) {
+        return {};
+    }
+    return std::string(buffer);
 }
 
 std::string formatDateShort(time_t time)
